@@ -3,11 +3,10 @@ from bs4 import BeautifulSoup
 
 
 class WhiteoaksfScraper:
-    def __init__(self, url):
-        self.res = requests.get(url)
-        self.soup = BeautifulSoup(self.res.content, 'html.parser')
+    def __init__(self):
+        self.url = 'https://whiteoaksf.com'
 
-    def get_manager_job_information(self, role_section):
+    def __get_manager_job_information(self, role_section):
         manager_job_information = dict()
         job_sections = role_section[0].text.split('\r\n')
 
@@ -28,9 +27,9 @@ class WhiteoaksfScraper:
 
         return manager_job_information
 
-    def scrap_managers(self):
+    def __scrap_managers(self, soup):
         manager_list = []
-        management_people = self.soup.find(
+        management_people = soup.find(
             'div', {'class': 'team team--management'}).findAll('div', {'class': 'team-member'})
 
         for manager in management_people:
@@ -44,13 +43,13 @@ class WhiteoaksfScraper:
             person['company'] = 'White Oak'
             person['city'] = role_section[1].text
             person['type'] = 'manager'
-            person.update(self.get_manager_job_information(role_section))
+            person.update(self.__get_manager_job_information(role_section))
             manager_list.append(person)
         return manager_list
 
-    def scrap_employees(self):
+    def __scrap_employees(self, soup):
         employee_list = []
-        employee_people = self.soup.find('div', {'class': 'team-table'}).findAll(
+        employee_people = soup.find('div', {'class': 'team-table'}).findAll(
             'div', {'class': 'team-tableRow', 'data-expand': 'employees'})
         for employee in employee_people:
             person = dict()
@@ -70,3 +69,10 @@ class WhiteoaksfScraper:
             person['type'] = 'employee'
             employee_list.append(person)
         return employee_list
+
+    def scrap_members(self):
+        res = requests.get(self.url + '/leadership-and-professionals')
+        soup = BeautifulSoup(res.content, 'html.parser')
+        scraped_managers = self.__scrap_managers(soup)
+        scraped_employes = self.__scrap_employees(soup)
+        return scraped_managers + scraped_employes

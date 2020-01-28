@@ -2,6 +2,7 @@ from datetime import datetime
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow
+from flask_cors import CORS
 
 from scraper import WhiteoaksfScraper
 
@@ -12,6 +13,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///test.db'
 
 db = SQLAlchemy(app)
 ma = Marshmallow(app)
+CORS(app)
 
 
 class Member(db.Model):
@@ -45,7 +47,7 @@ member_schema = MemberSchema()
 members_schema = MemberSchema(many=True)
 
 
-@app.route('/scrape', methods=['GET'])
+@app.route('/api/scrape', methods=['GET'])
 def scrape_whiteoaksf():
     scraper = WhiteoaksfScraper(
         'https://whiteoaksf.com/leadership-and-professionals/')
@@ -64,8 +66,15 @@ def scrape_whiteoaksf():
     result = members_schema.dump(members_saved)
     return jsonify(result)
 
+@app.route('/api/members', methods=['GET'])
+def get_all_members():
+    members = Member.query.all()
+    result = members_schema.dump(members)
+    print('There are {} members saved'.format(len(result)))
+    return jsonify(result)
 
-@app.route('/employees', methods=['GET'])
+
+@app.route('/api/employees', methods=['GET'])
 def get_employees():
     employees = Member.query.filter_by(type='employee')
     result = members_schema.dump(employees)
@@ -73,7 +82,7 @@ def get_employees():
     return jsonify(result)
 
 
-@app.route('/managers', methods=['GET'])
+@app.route('/api/managers', methods=['GET'])
 def get_managers():
     managers = Member.query.filter_by(type='manager')
     result = members_schema.dump(managers)
